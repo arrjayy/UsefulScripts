@@ -1,5 +1,6 @@
 $Path = $env:TEMP;
 $Installer = "chrome_installer.exe";
-Invoke-WebRequest "http://dl.google.com/chrome/install/375.126/chrome_installer.exe" -OutFile $Path\$Installer;
+$ChromeVersion = 375.126;
+Invoke-WebRequest "http://dl.google.com/chrome/install/$ChromeVersion/$Installer" -OutFile $Path\$Installer;
 Start-Process -FilePath $Path\$Installer -Args "/silent /install" -Verb RunAs -Wait;
 Remote-Item $Path\$Installer
