@@ -8,32 +8,26 @@ $filePath = "$(System.DefaultWorkingDirectory)\Example\Path\To\File\App.config"
 # Read the existing file
 $appConfig = [xml](cat $filePath)
 
-# ENV Variables defined in Azure Pipeline
+# ENV Variables defined in Azure Pipeline which we need to provide two values for
 $logDatabaseContext = "$(DbLogContext)"
 $logDatabaseConnectionString = "$(dbLog)"
-$databaseConnectionString = "$(db)"
-$storageAccountConnectionString = "$(storageAccount)"
-$cosmosDbEndpoint = "$(documentDbEndPoint)"
-$cosmosDbAuthKey = "$(documentDbAuthKey)"
-$isBuildPipeline = "$(isBuildPipeline)"
 
-# Re-factor this foreach to get the list of replacable elements
-$appConfig.configuration.appSettings.add | foreach {
-    Write-Host $_.key  #Write each key you want to replace here
-    if ($_.key -eq "db") {
-        $_.value = $databaseConnectionString
-    }
-    elseif ($_.key -eq "storageAccount") {
-        $_.value = $storageAccountConnectionString
-    }
-    elseif ($_.key -eq "documentDbEndPoint") {
-        $_.value = $cosmosDbEndpoint
-    }
-    elseif ($_.key -eq "documentDbAuthKey") {
-        $_.value = $cosmosDbAuthKey
-    }
-    elseif ($_.key -eq "isBuildPipeline") {
-        $_.value = $isBuildPipeline
+# Hash table of environmental variables to iterate through
+$envVars = @{}
+
+Get-ChildItem Env: | ForEach-Object {
+    $envVars.Add($_.Key, $_.Value) 
+}
+
+$envVars.GetEnumerator() | ForEach-Object {
+    $message = "ENV Key: {0}, ENV Value: {1}" -f $_.Key, $_.Value
+    Write-Host $message
+}
+
+# Check if hash key exists in appConfig and replace with value if true
+$appConfig.configuration.appSettings.add | ForEach-Object {
+    if ($envVars.ContainsKey($_.key)) {
+        $_.value = $envVars[$_.key]
     }
 }
 
