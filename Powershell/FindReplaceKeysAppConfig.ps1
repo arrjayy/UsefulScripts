@@ -19,10 +19,11 @@ Get-ChildItem Env: | ForEach-Object {
     $envVars.Add($_.Key, $_.Value) 
 }
 
-$envVars.GetEnumerator() | ForEach-Object {
-    $message = "ENV Key: {0}, ENV Value: {1}" -f $_.Key, $_.Value
-    Write-Host $message
-}
+# Report all ENV var's scraped from the host machine
+# $envVars.GetEnumerator() | ForEach-Object {
+#     $message = "ENV Key: {0}, ENV Value: {1}" -f $_.Key, $_.Value
+#     Write-Host $message
+# }
 
 # Check if hash key exists in appConfig and replace with value if true
 $appConfig.configuration.appSettings.add | ForEach-Object {
