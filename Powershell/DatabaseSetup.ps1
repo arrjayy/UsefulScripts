@@ -1,14 +1,14 @@
 # Define string constants for usage in scripts
-
-$DEFAULTDATABASE = "master"
+$DEFAULTDATABASE = "pipeline"
 $DEFAULTSMPLOCALDATABASE = "tunstall-smp-db-stage"
 $DEFAULTSMPLOGDATABASE = "tunstall-smp-db-log"
 $LOCALDATABASE = "dmp-db-local"
 $LOCALTESTDATABASE = "${LOCALDATABASE}-test"
 $LOGDATABASE = "dmp-db-log"
 $LOGTESTDATABASE = "${LOGDATABASE}-test"
-$DB_USERNAME = "NewUser"
-$SA_PASSWORD = $env:SA_PASSWORD
+$DBUSERNAME = "NewUser"
+#$SA_PASSWORD = $env:SA_PASSWORD
+$SA_PASSWORD = "Password123"
 $SERVERINSTANCE = $null
 
 # Define constants for files, e.g. database scripts
@@ -23,7 +23,8 @@ function NavigateToRepository{
 }
 
 function QueryDatabaseWithFile($database, $file) {
-    Invoke-SqlCmd -ServerInstance "$SERVERINSTANCE" -Username "$DB_USERNAME" -Password "$SA_PASSWORD" -Database "$database" -InputFile "$file"
+    #Invoke-SqlCmd -ConnectionString "Server=$SERVERINSTANCE;Database=pipeline;Trusted_Connection=True;MultipleActiveResultSets=true" -Database "$database" -InputFile "$file"
+    Invoke-SqlCmd -ServerInstance "$SERVERINSTANCE" -Database "$database" -InputFile "$file"
 }
 
 function ReplaceStringInFile($file, $originalString, $replacementString) {
@@ -49,16 +50,22 @@ function GetLocalDBNamedPipe {
 
 function CreateAndStartLocalDB {
     #SqlLocalDB.exe create "$DEFAULTDATABASE" -s
-    SqlLocalDB.exe create "master"  
-    SqlLocalDB.exe share "master" "localhost"  
-    SqlLocalDB.exe start "master"  
-    SqlLocalDB.exe info "master"  
+    SqlLocalDB.exe create "pipeline"  
+    SqlLocalDB.exe share "pipeline" "localhost"  
+    SqlLocalDB.exe start "pipeline"  
+    SqlLocalDB.exe info "pipeline"  
     #$NamedPipe = GetLocalDBNamedPipe -DB "master"
-    $global:SERVERINSTANCE = GetLocalDBNamedPipe -DB "master"
+    $global:SERVERINSTANCE = GetLocalDBNamedPipe -DB "pipeline"
     # The previous statement outputs the Instance pipe name for the next step 
-    Invoke-SqlCmd -ServerInstance $SERVERINSTANCE -Query "CREATE LOGIN NewUser WITH PASSWORD = '$SA_PASSWORD';"
-    Invoke-SqlCmd -ServerInstance $SERVERINSTANCE -Query "CREATE USER NewUser;"  
-    Invoke-SqlCmd -ServerInstance $SERVERINSTANCE -Query "ALTER ROLE db_owner ADD MEMBER [NewUser] ;" 
+    # Invoke-SqlCmd -ServerInstance $SERVERINSTANCE -Query "CREATE LOGIN [$DBUSERNAME] WITH PASSWORD = '$SA_PASSWORD', DEFAULT_DATABASE=[pipeline]"
+    # Invoke-SqlCmd -ServerInstance $SERVERINSTANCE -Query "ALTER SERVER ROLE [sysadmin] ADD MEMBER [$DBUSERNAME]"
+    # Invoke-SqlCmd -ServerInstance $SERVERINSTANCE -Query "CREATE USER [$DBUSERNAME] FOR LOGIN [$DBUSERNAME];"  
+    # Invoke-SqlCmd -ServerInstance $SERVERINSTANCE -Query "EXEC sp_addrolemember 'db_owner', [$DBUSERNAME];" 
+
+    Invoke-SqlCmd -ServerInstance $SERVERINSTANCE -Query "Create LOGIN [NewUser] WITH PASSWORD = 'Password123'; CREATE USER [NewUser];"
+    #Invoke-SqlCmd -ServerInstance $SERVERINSTANCE -Query "ALTER ROLE sysadmin ADD MEMBER [PipelineUser]"
+
+    Invoke-Sqlcmd -ServerInstance $SERVERINSTANCE -Query "CREATE DATABASE [$DEFAULTDATABASE]"
 }
 
 function CreateLocalDatabases {
